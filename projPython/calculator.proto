@@ -1,0 +1,17 @@
+syntax = "proto3"; // versão 3 do Protocol Buffers
+package calculadora;
+
+// A mensagem de requisição contendo os dois números a serem somados
+message SomaRequest {
+    double a = 1;
+    double b = 2;
+}
+// A mensagem de resposta contendo o resultado
+message SomaResponse {
+    double resultado = 1;
+}
+// A definição do serviço "Calculadora"
+service Calculadora {
+// Um método RPC que aceita uma SomaRequest e retorna uma SomaResponse
+    rpc Somar (SomaRequest) returns (SomaResponse) {}
+}

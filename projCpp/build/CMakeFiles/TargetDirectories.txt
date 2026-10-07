@@ -1,0 +1,5 @@
+/workspaces/LAB-COMP-Distribuida-2/projCpp/build/CMakeFiles/generate_proto.dir
+/workspaces/LAB-COMP-Distribuida-2/projCpp/build/CMakeFiles/servidor_cpp.dir
+/workspaces/LAB-COMP-Distribuida-2/projCpp/build/CMakeFiles/cliente_cpp.dir
+/workspaces/LAB-COMP-Distribuida-2/projCpp/build/CMakeFiles/edit_cache.dir
+/workspaces/LAB-COMP-Distribuida-2/projCpp/build/CMakeFiles/rebuild_cache.dir

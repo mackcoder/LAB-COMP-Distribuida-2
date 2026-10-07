@@ -1,0 +1,3 @@
+# Hashes of file build rules.
+fa809724d72c4e74a787dbc037d42777 CMakeFiles/generate_proto
+7a966ab70ec67c84b52ddba8673a912b calculator.pb.cc
