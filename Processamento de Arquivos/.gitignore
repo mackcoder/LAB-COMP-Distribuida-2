@@ -1,1 +1,6 @@
+server_cpp/build/
+client_python/*_pb2*.py
+client_python/*_pb2*.pyi
+__pycache__/
+*.log
 
