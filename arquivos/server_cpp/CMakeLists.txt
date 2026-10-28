@@ -1,5 +1,5 @@
 # VERSÃO LOCAL
-
+#[[
 #cd server_cpp
 #mkdir build
 #cd build
@@ -56,12 +56,12 @@ target_link_libraries(server
     gRPC::grpc
     protobuf::libprotobuf
 )
-
+]]
 
 
 
 # VERSÃO DOCKER
-#[[
+
 cmake_minimum_required(VERSION 3.15)
 project(FileProcessorServer CXX)
 
@@ -110,4 +110,4 @@ target_link_libraries(server
     grpc
     protobuf
 )
-]]
+
