@@ -75,16 +75,31 @@ class FileProcessorClient:
     # =========================================================================
 
     def convert_to_txt(self, input_path, output_path):
-        # Não é necessário implementar para esta atividade.
-        pass
+        if not os.path.isfile(input_path):
+            raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
+
+        params = {'convert_to_txt_params': file_processor_pb2.ConvertToTXTRequest()}
+        requests = generate_requests(input_path, params)
+        response_stream = self.stub.ConvertToTXT(requests)
+        return save_response_stream(response_stream, output_path)
 
     def convert_image(self, input_path, output_path, out_fmt):
-        # Não é necessário implementar para esta atividade.
-        pass
+        if not os.path.isfile(input_path):
+            raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
+
+        params = {'convert_image_format_params': file_processor_pb2.ConvertImageFormatRequest(output_format=out_fmt)}
+        requests = generate_requests(input_path, params)
+        response_stream = self.stub.ConvertImageFormat(requests)
+        return save_response_stream(response_stream, output_path)
 
     def resize_image(self, input_path, output_path, w, h):
-        # Não é necessário implementar para esta atividade.
-        pass
+        if not os.path.isfile(input_path):
+            raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
+
+        params = {'resize_image_params': file_processor_pb2.ResizeImageRequest(width=w, height=h)}
+        requests = generate_requests(input_path, params)
+        response_stream = self.stub.ResizeImage(requests)
+        return save_response_stream(response_stream, output_path)
 
 # =============================================================================
 # ÁREA DE TESTE (PODE ALTERAR OS CAMINHOS DOS ARQUIVOS)

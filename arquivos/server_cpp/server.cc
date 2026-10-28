@@ -149,19 +149,108 @@ public:
     // MÉTODOS IGNORADOS PARA ESTA ENTREGA
     // =========================================================================
 
-    Status ConvertToTXT(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* /*stream*/) override {
-        // Não é necessário implementar para esta atividade.
-        return Status::OK;
+    Status ConvertToTXT(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* stream) override {
+        const std::string service = "ConvertToTXT";
+        std::string in_path, original_name;
+        FileRequest first_req;
+
+        if (!ReceiveFile(stream, in_path, original_name, first_req)) {
+            LogOperation("ERRO", service, "", "Nenhum dado recebido do cliente");
+            return Status(grpc::StatusCode::INVALID_ARGUMENT, "Nenhum arquivo recebido");
+        }
+        LogOperation("INFO", service, original_name, "Requisicao recebida");
+
+        std::string out_name = BaseName(original_name) + ".txt";
+        std::string out_path = "/tmp/output_" + out_name;
+        std::string cmd = "pdftotext \"" + in_path + "\" \"" + out_path + "\"";
+
+        return RunAndSend(stream, service, original_name, cmd, in_path, out_path, out_name);
     }
 
-    Status ConvertImageFormat(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* /*stream*/) override {
-        // Não é necessário implementar para esta atividade.
-        return Status::OK;
+    Status ConvertImageFormat(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* stream) override {
+        const std::string service = "ConvertImageFormat";
+        std::string in_path, original_name;
+        FileRequest first_req;
+
+        if (!ReceiveFile(stream, in_path, original_name, first_req)) {
+            LogOperation("ERRO", service, "", "Nenhum dado recebido do cliente");
+            return Status(grpc::StatusCode::INVALID_ARGUMENT, "Nenhum arquivo recebido");
+        }
+
+        // O formato de saída vem na primeira mensagem do stream
+        std::string fmt = first_req.convert_image_format_params().output_format();
+        if (fmt.empty() || fmt.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos) {
+            LogOperation("ERRO", service, original_name, "Formato de saida invalido: '" + fmt + "'");
+            std::remove(in_path.c_str());
+            return Status(grpc::StatusCode::INVALID_ARGUMENT, "Formato de saida invalido");
+        }
+        LogOperation("INFO", service, original_name, "Requisicao recebida (formato " + fmt + ")");
+
+        std::string out_name = BaseName(original_name) + "." + fmt;
+        std::string out_path = "/tmp/output_" + out_name;
+        std::string cmd = "convert \"" + in_path + "\" \"" + out_path + "\"";
+
+        return RunAndSend(stream, service, original_name, cmd, in_path, out_path, out_name);
     }
 
-    Status ResizeImage(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* /*stream*/) override {
-        // Não é necessário implementar para esta atividade.
-        return Status::OK;
+    Status ResizeImage(ServerContext* /*context*/, ServerReaderWriter<FileResponse, FileRequest>* stream) override {
+        const std::string service = "ResizeImage";
+        std::string in_path, original_name;
+        FileRequest first_req;
+
+        if (!ReceiveFile(stream, in_path, original_name, first_req)) {
+            LogOperation("ERRO", service, "", "Nenhum dado recebido do cliente");
+            return Status(grpc::StatusCode::INVALID_ARGUMENT, "Nenhum arquivo recebido");
+        }
+
+        // Largura e altura vêm na primeira mensagem do stream
+        int width = first_req.resize_image_params().width();
+        int height = first_req.resize_image_params().height();
+        if (width <= 0 || height <= 0) {
+            LogOperation("ERRO", service, original_name, "Dimensoes invalidas: " + std::to_string(width) + "x" + std::to_string(height));
+            std::remove(in_path.c_str());
+            return Status(grpc::StatusCode::INVALID_ARGUMENT, "Largura e altura devem ser maiores que zero");
+        }
+        std::string size = std::to_string(width) + "x" + std::to_string(height);
+        LogOperation("INFO", service, original_name, "Requisicao recebida (" + size + ")");
+
+        std::string out_name = "resized_" + original_name;
+        std::string out_path = "/tmp/output_" + out_name;
+        std::string cmd = "convert \"" + in_path + "\" -resize " + size + " \"" + out_path + "\"";
+
+        return RunAndSend(stream, service, original_name, cmd, in_path, out_path, out_name);
+    }
+
+private:
+    // Nome do arquivo sem a extensão (ex: "foto.jpg" -> "foto")
+    static std::string BaseName(const std::string& name) {
+        size_t dot = name.find_last_of('.');
+        return (dot == std::string::npos) ? name : name.substr(0, dot);
+    }
+
+    // Executa o comando externo, registra no log, devolve o resultado e limpa /tmp
+    Status RunAndSend(ServerReaderWriter<FileResponse, FileRequest>* stream, const std::string& service,
+                      const std::string& original_name, const std::string& cmd,
+                      const std::string& in_path, const std::string& out_path, const std::string& out_name) {
+        int ret = std::system(cmd.c_str());
+
+        if (ret != 0) {
+            LogOperation("ERRO", service, original_name, "Comando falhou (codigo " + std::to_string(ret) + ")");
+            std::remove(in_path.c_str());
+            std::remove(out_path.c_str());
+            return Status(grpc::StatusCode::INTERNAL, "Falha ao processar o arquivo");
+        }
+
+        Status status = SendFile(stream, out_path, out_name);
+        if (status.ok()) {
+            LogOperation("SUCESSO", service, original_name, "Arquivo processado e enviado como " + out_name);
+        } else {
+            LogOperation("ERRO", service, original_name, "Falha ao enviar: " + status.error_message());
+        }
+
+        std::remove(in_path.c_str());
+        std::remove(out_path.c_str());
+        return status;
     }
 };
 
